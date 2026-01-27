@@ -19,8 +19,8 @@ from schemas import AgentRespone
 
 
 tools = [TavilySearch()]
-llm = ChatOpenAI(model="gpt-4")
-react_prompt = hub.pull("hwchase17/react")
+llm = ChatOpenAI(model="gpt-4o-mini")
+# react_prompt = hub.pull("hwchase17/react")
 output_parser = PydanticOutputParser(pydantic_object = AgentRespone)
 react_prompt_with_format_instructions = PromptTemplate(
     template = REACT_PROMPT_WITH_FORMAT_INSTRUCTIONS,
@@ -35,15 +35,21 @@ agent = create_react_agent(
 )
 
 
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-chain = agent_executor
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True
+)
+extract_output = RunnableLambda(lambda x : x["output"])
+parse_output = RunnableLambda(lambda x : output_parser.parse(x))
+
+
+
+chain = agent_executor | extract_output | parse_output
 
 
 def main():
     print("Hello from langchain-course!")
     result = chain.invoke(
         input={
-            "input": "Top 3 Goal Scorer in Soccerr in entire history of the sport with number of goals and assists"
+            "input": "Top Goal Scorer in Soccerr in entire history of the sport with number of goals and assists"
         }
     )
     print(result)
